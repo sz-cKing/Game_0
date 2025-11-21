@@ -3,11 +3,11 @@
 namespace Script.Core.Movement
 {
     /// <summary>
-    /// 正常的移动
+    /// 直线方向移动
     /// </summary>
-    public class Move : BaseMove
+    public class DirectionMove : BaseMove
     {
-        public Move(DataBaseMove dataBaseMove) : base(dataBaseMove)
+        public DirectionMove(DataBaseMove dataBaseMove) : base(dataBaseMove)
         {
         }
 

@@ -5,7 +5,7 @@ namespace Script.Core.Entity
     public class Bullet : BaseEntity
     {
         private RectTransform _rectTransform;
-        
+
         public override float F_GetMoveSpeed()
         {
             return 10f;
@@ -31,6 +31,7 @@ namespace Script.Core.Entity
             {
                 _rectTransform = transform.GetComponent<RectTransform>();
             }
+
             return _rectTransform;
         }
     }

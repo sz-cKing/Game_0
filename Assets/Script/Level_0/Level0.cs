@@ -33,7 +33,22 @@ namespace Script.Level_0
             EntityManager.Instance.F_AddEntity(mainHero);
             //倒计时
             _timer = new Timer();
-            _timer.F_Init(60, uiLevel0.OnTime);
+            _timer.F_Init(60, (lastTime) =>
+            {
+                //UI层的倒讲时
+                uiLevel0.OnTime(lastTime);
+                //
+                if (lastTime <= 0)
+                {
+                    OnGameFinish();
+                }
+            });
+        }
+
+        private void OnGameFinish()
+        {
+            Debug.LogError("游戏结束");
+            
         }
 
         void Update()
@@ -95,8 +110,9 @@ namespace Script.Level_0
                     GameObject newBullet = Instantiate(uiLevel0.v_BulletImage.gameObject, uiLevel0.transform);
                     bullet = newBullet.AddComponent<Bullet>();
                 }
+
                 //
-                Move move = new Move(new DataBaseMove()
+                DirectionMove directionMove = new DirectionMove(new DataBaseMove()
                 {
                     //给子弹的飞行的方向
                     MoveDirection = GetBulletTargetDirection(),
@@ -104,7 +120,7 @@ namespace Script.Level_0
                     MoveSpeed = bullet.F_GetMoveSpeed(),
                 });
                 bullet.TeamType = enTeamType.Self;
-                bullet.F_AddMove(move);
+                bullet.F_AddMove(directionMove);
                 bullet.F_SetCurrentPos(EntityManager.Instance.F_GetMainHero().F_GetCurrentPos());
                 EntityManager.Instance.F_AddEntity(bullet);
                 _runBullets.Add(bullet);

@@ -2,7 +2,11 @@
 {
     public enum enSceneType
     {
-        Start,
-        Level_0,
+        Start = 0,
+        Level0,
+        Level1,
+        Level2,
+        Level3,
+        All,
     }
 }
