@@ -67,7 +67,7 @@ namespace Script.Level_0
             CheckBullet();
         }
 
-        private void CheckBullet()添加
+        private void CheckBullet()
         {
             for (int i = _allBullet.Count - 1; i >= 0; i--)
             {
