@@ -4,7 +4,12 @@
     {
         public override float F_GetMoveSpeed()
         {
-            return 1;
+            return 2;
+        }
+
+        public override enEntityType F_GetEntityType()
+        {
+            return enEntityType.Hero;
         }
     }
 }

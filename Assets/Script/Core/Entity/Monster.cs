@@ -6,5 +6,10 @@
         {
             return 1;
         }
+
+        public override enEntityType F_GetEntityType()
+        {
+            return enEntityType.Monster;
+        }
     }
 }

@@ -11,6 +11,11 @@ namespace Script.Core.Entity
             return 10f;
         }
 
+        public override enEntityType F_GetEntityType()
+        {
+            return enEntityType.Bullet;
+        }
+
         public void F_Clear()
         {
             for (int i = _baseMoves.Count - 1; i >= 0; i--)

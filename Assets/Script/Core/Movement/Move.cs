@@ -11,7 +11,7 @@ namespace Script.Core.Movement
         {
             DataBaseMove dataBaseMove = F_GetData();
             Vector3 currentPos = dataBaseMove.MoveController.F_GetCurrentPos();
-            currentPos += dataBaseMove.Direction * dataBaseMove.MoveController.F_GetMoveSpeed();
+            currentPos += dataBaseMove.MoveDirection * dataBaseMove.MoveController.F_GetMoveSpeed();
             dataBaseMove.MoveController.F_SetCurrentPos(currentPos);
         }
     }

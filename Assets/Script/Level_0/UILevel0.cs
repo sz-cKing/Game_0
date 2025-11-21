@@ -13,7 +13,7 @@ namespace Script.Level_0
     {
         public Button v_ExitBtn;
         public Image v_BulletImage;
-
+        public Image v_MonsterImage;
         /// <summary>
         /// 主控英雄的实例
         /// </summary>

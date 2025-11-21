@@ -11,7 +11,7 @@ namespace Script.Core.Entity
         /// <summary>
         /// 所属阵营
         /// </summary>
-        public enTeamType TeamType;
+        public enTeamType TeamType { get; set; }
 
         /// <summary>
         /// 各类运动
@@ -43,7 +43,8 @@ namespace Script.Core.Entity
         {
             baseMove.F_SetData(new DataBaseMove()
             {
-                Direction = baseMove.F_GetData().Direction,
+                MoveDirection = baseMove.F_GetData().MoveDirection,
+                MoveToTargetEntity = baseMove.F_GetData().MoveToTargetEntity,
                 MoveController = this,
             });
             _baseMoves.Add(baseMove);
@@ -84,5 +85,7 @@ namespace Script.Core.Entity
         }
 
         public abstract float F_GetMoveSpeed();
+
+        public abstract enEntityType F_GetEntityType();
     }
 }
