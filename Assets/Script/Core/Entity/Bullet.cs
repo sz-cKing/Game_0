@@ -18,9 +18,10 @@ namespace Script.Core.Entity
 
         public void F_Clear()
         {
-            for (int i = _baseMoves.Count - 1; i >= 0; i--)
+            for (int i = v_BaseMoves.Count - 1; i >= 0; i--)
             {
-                F_RemoveMove(_baseMoves[i]);
+                v_BaseMoves[i].F_Clear();
+                F_RemoveMove(v_BaseMoves[i]);
             }
         }
 

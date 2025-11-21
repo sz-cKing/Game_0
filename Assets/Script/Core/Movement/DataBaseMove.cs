@@ -6,7 +6,7 @@ namespace Script.Core.Movement
     /// <summary>
     /// 移动需要的数据
     /// </summary>
-    public struct DataBaseMove
+    public class DataBaseMove
     {
         /// <summary>
         /// 运动的方向
@@ -14,9 +14,9 @@ namespace Script.Core.Movement
         public Vector3 MoveDirection;
 
         /// <summary>
-        /// 移动要到达的目标（追随，跟踪）
+        /// 速度
         /// </summary>
-        public BaseEntity MoveToTargetEntity;
+        public float MoveSpeed;
 
         /// <summary>
         /// 当前运动的实例对象

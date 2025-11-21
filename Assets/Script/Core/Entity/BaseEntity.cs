@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Script.Core.Movement;
 using UnityEngine;
-using UnityEngine.Pool;
 
 namespace Script.Core.Entity
 {
@@ -14,26 +12,9 @@ namespace Script.Core.Entity
         public enTeamType TeamType { get; set; }
 
         /// <summary>
-        /// 各类运动
+        /// 身上挂载的运动行为
         /// </summary>
-        protected readonly List<BaseMove> _baseMoves = new List<BaseMove>();
-
-        private void Update()
-        {
-            F_MoveUpdate(Time.deltaTime);
-        }
-
-        public virtual void F_MoveUpdate(float deltaTime)
-        {
-            List<BaseMove> temp = ListPool<BaseMove>.Get();
-            temp.AddRange(_baseMoves);
-            foreach (var baseMove in temp)
-            {
-                baseMove.F_Update(deltaTime);
-            }
-
-            ListPool<BaseMove>.Release(temp);
-        }
+        public readonly List<BaseMove> v_BaseMoves = new List<BaseMove>();
 
         /// <summary>
         /// 添加移动实例
@@ -41,13 +22,14 @@ namespace Script.Core.Entity
         /// <param name="baseMove"></param>
         public void F_AddMove(BaseMove baseMove)
         {
-            baseMove.F_SetData(new DataBaseMove()
+            if (v_BaseMoves.Contains(baseMove))
             {
-                MoveDirection = baseMove.F_GetData().MoveDirection,
-                MoveToTargetEntity = baseMove.F_GetData().MoveToTargetEntity,
-                MoveController = this,
-            });
-            _baseMoves.Add(baseMove);
+                Debug.LogError($"要加载的运动实例已经存在里列表里了，baseMove:{baseMove}");
+            }
+            else
+            {
+                v_BaseMoves.Add(baseMove);
+            }
         }
 
         /// <summary>
@@ -56,9 +38,9 @@ namespace Script.Core.Entity
         /// <param name="baseMove"></param>
         public void F_RemoveMove(BaseMove baseMove)
         {
-            if (_baseMoves.Contains(baseMove))
+            if (v_BaseMoves.Contains(baseMove))
             {
-                _baseMoves.Remove(baseMove);
+                v_BaseMoves.Remove(baseMove);
             }
             else
             {

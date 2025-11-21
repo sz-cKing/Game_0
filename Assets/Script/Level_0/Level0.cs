@@ -19,6 +19,7 @@ namespace Script.Level_0
         private Stack<Bullet> _releaseBulletStack;
         private Stack<Monster> _releaseMonsterStack;
         private float _runCreateMonsterTime;
+        private Timer _timer;
 
         void Awake()
         {
@@ -30,6 +31,9 @@ namespace Script.Level_0
             mainHero.TeamType = enTeamType.Self;
             mainHero.F_Init();
             EntityManager.Instance.F_AddEntity(mainHero);
+            //倒计时
+            _timer = new Timer();
+            _timer.F_Init(60, uiLevel0.OnTime);
         }
 
         void Update()
@@ -60,14 +64,15 @@ namespace Script.Level_0
                 }
 
                 //追踪目标移动
-                FollowTargetMove followTargetMove = new FollowTargetMove();
-                followTargetMove.F_SetData(new DataBaseMove()
+                FollowTarget followTarget = new FollowTarget(new DataFollowTarget()
                 {
                     //追踪的目标
                     MoveToTargetEntity = EntityManager.Instance.F_GetMainHero(),
+                    MoveSpeed = monster.F_GetMoveSpeed(),
+                    MoveController = monster,
                 });
                 monster.TeamType = enTeamType.Enemy;
-                monster.F_AddMove(followTargetMove);
+                monster.F_AddMove(followTarget);
                 monster.F_SetCurrentPos(new Vector3(Random.Range(0, Screen.width), Random.Range(0, Screen.height), 0));
                 EntityManager.Instance.F_AddEntity(monster);
             }
@@ -90,13 +95,13 @@ namespace Script.Level_0
                     GameObject newBullet = Instantiate(uiLevel0.v_BulletImage.gameObject, uiLevel0.transform);
                     bullet = newBullet.AddComponent<Bullet>();
                 }
-
                 //
-                Move move = new Move();
-                move.F_SetData(new DataBaseMove()
+                Move move = new Move(new DataBaseMove()
                 {
                     //给子弹的飞行的方向
                     MoveDirection = GetBulletTargetDirection(),
+                    MoveController = bullet,
+                    MoveSpeed = bullet.F_GetMoveSpeed(),
                 });
                 bullet.TeamType = enTeamType.Self;
                 bullet.F_AddMove(move);
@@ -143,6 +148,7 @@ namespace Script.Level_0
         public void F_Clear()
         {
             EntityManager.Instance.F_Clear();
+            _timer.F_Clear();
         }
     }
 }

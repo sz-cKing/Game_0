@@ -1,6 +1,7 @@
 ﻿using System;
 using Script.Common;
 using Script.Core.Common;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,6 +20,8 @@ namespace Script.Level_0
         /// </summary>
         public Image v_HeroImage;
 
+        [SerializeField] private TextMeshProUGUI _Time; 
+
         private void Awake()
         {
             v_ExitBtn.onClick.AddListener(OnClickExitGame);
@@ -27,6 +30,15 @@ namespace Script.Level_0
         private void OnClickExitGame()
         {
             GameManager.Instance.LoadScene(enSceneType.Start);
+        }
+
+        /// <summary>
+        /// 倒计时
+        /// </summary>
+        /// <param name="time"></param>
+        public void OnTime(float time)
+        {
+            _Time.text = Timer.ConvertSecondsToMinutesSeconds(time);
         }
     }
 }
