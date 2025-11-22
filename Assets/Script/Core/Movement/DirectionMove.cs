@@ -9,6 +9,7 @@ namespace Script.Core.Movement
     {
         public DirectionMove(DataBaseMove dataBaseMove) : base(dataBaseMove)
         {
+            
         }
 
         public override void F_Update(float deltaTime)
