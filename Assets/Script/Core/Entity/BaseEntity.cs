@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Script.Core.CheckCollider;
 using Script.Core.Movement;
 using UnityEngine;
 
 namespace Script.Core.Entity
 {
-    public abstract class BaseEntity : MonoBehaviour, IMoveController
+    public abstract class BaseEntity : MonoBehaviour, IMoveController, IColliderInstance, ICheckColliderInstance
     {
         /// <summary>
         /// 所属阵营
@@ -69,5 +71,35 @@ namespace Script.Core.Entity
         public abstract float F_GetMoveSpeed();
 
         public abstract enEntityType F_GetEntityType();
+        private BoxCollider2D _boxCollider2D;
+
+        public Collider2D Collider2D
+        {
+            get
+            {
+                if (_boxCollider2D == null)
+                {
+                    _boxCollider2D = gameObject.GetComponent<BoxCollider2D>();
+                }
+
+                return _boxCollider2D;
+            }
+        }
+
+        public BaseEntity Entity => this;
+        
+        public virtual void F_CheckOtherCollider(IColliderInstance otherCollider, Action<CheckResult> callback)
+        {
+            CheckResult checkResult = new CheckResult
+            {
+                IsCollider = Collider2D.IsTouching(otherCollider.Collider2D),
+                Checker = this, Other = otherCollider,
+            };
+            //
+            if (checkResult.IsCollider)
+            {
+                callback?.Invoke(checkResult);
+            }
+        }
     }
 }

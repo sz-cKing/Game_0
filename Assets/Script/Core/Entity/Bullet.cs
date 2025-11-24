@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using Script.Core.CheckCollider;
+using UnityEngine;
 
 namespace Script.Core.Entity
 {
@@ -14,6 +16,11 @@ namespace Script.Core.Entity
         public override enEntityType F_GetEntityType()
         {
             return enEntityType.Bullet;
+        }
+
+        public override void F_CheckOtherCollider(IColliderInstance otherCollider, Action<CheckResult> callback)
+        {
+            base.F_CheckOtherCollider(otherCollider, callback);
         }
 
         public void F_Clear()
