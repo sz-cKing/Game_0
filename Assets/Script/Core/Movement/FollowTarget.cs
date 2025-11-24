@@ -22,6 +22,7 @@ namespace Script.Core.Movement
             Vector3 pos = _dataFollowTarget.MoveController.F_GetCurrentPos() +
                           direction * _dataFollowTarget.MoveSpeed;
             _dataFollowTarget.MoveController.F_SetCurrentPos(pos);
+            base.F_Update(deltaTime);
         }
 
         public override void F_Clear()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Script.Core.CheckCollider;
 using Script.Core.Common;
 using Script.Core.Entity;
 using Script.Core.Movement;
@@ -48,7 +49,6 @@ namespace Script.Level_0
         private void OnGameFinish()
         {
             Debug.LogError("游戏结束");
-            
         }
 
         void Update()
@@ -111,19 +111,67 @@ namespace Script.Level_0
                     bullet = newBullet.AddComponent<Bullet>();
                 }
 
-                //
+                //给子弹添加直接飞行
                 DirectionMove directionMove = new DirectionMove(new DataBaseMove()
                 {
                     //给子弹的飞行的方向
                     MoveDirection = GetBulletTargetDirection(),
                     MoveController = bullet,
                     MoveSpeed = bullet.F_GetMoveSpeed(),
+                    //检测飞行中是否碰撞
+                    UpdateMoveCallback = CheckBulletCollider,
                 });
                 bullet.TeamType = enTeamType.Self;
                 bullet.F_AddMove(directionMove);
+                //设置子弹的初始坐标
                 bullet.F_SetCurrentPos(EntityManager.Instance.F_GetMainHero().F_GetCurrentPos());
+                bullet.gameObject.SetActive(true);
                 EntityManager.Instance.F_AddEntity(bullet);
                 _runBullets.Add(bullet);
+            }
+        }
+
+        /// <summary>
+        /// 检测已经碰撞
+        /// </summary>
+        /// <param name="baseMove"></param>
+        private void CheckBulletCollider(BaseMove baseMove)
+        {
+            //这个是子弹,获取它的测试碰撞
+            if (baseMove.F_GetData().MoveController is ICheckColliderInstance bulletCheckColliderInstance)
+            {
+                //
+                List<BaseEntity> monsters = EntityManager.Instance.F_GetEntityByType(enEntityType.Monster);
+                foreach (var tempMonster in monsters)
+                {
+                    //检测子弹是否碰撞到这个怪物
+                    bulletCheckColliderInstance.F_CheckOtherCollider(tempMonster, (result =>
+                    {
+                        if (result.IsCollider)
+                        {
+                            // Debug.LogError($"碰撞到对象：{result.Other.Entity.name}");
+                            Vector3 beatBackDirection = (tempMonster.F_GetCurrentPos() -
+                                                         baseMove.F_GetData().MoveController.F_GetCurrentPos())
+                                .normalized;
+                            //击飞效果
+                            BeatBack beatBack = new BeatBack(new DataBeatBack()
+                            {
+                                EffectTime = 0.5f,
+                                MoveController = tempMonster,
+                                MoveDirection = beatBackDirection,
+                                MoveSpeed = 3,
+                            });
+                            tempMonster.F_AddMove(beatBack);
+                            //子弹对象移除
+                            Bullet bullet = baseMove.F_GetData().MoveController as Bullet;
+                            ClearBullet(bullet);
+                        }
+                    }));
+                }
+            }
+            else
+            {
+                Debug.LogError("为什么会存在传入的数据不是检测实例呢？");
             }
         }
 
@@ -152,13 +200,19 @@ namespace Script.Level_0
                 Bullet bullet = _runBullets[i];
                 if (CanvasOverlayCheck.F_IsUIElementOutOfScreen(bullet.F_GetRectTransform()))
                 {
-                    bullet.F_Clear();
-                    //
-                    EntityManager.Instance.F_RemoveEntity(bullet);
-                    _runBullets.Remove(bullet);
-                    _releaseBulletStack.Push(bullet);
+                    ClearBullet(bullet);
                 }
             }
+        }
+
+        private void ClearBullet(Bullet bullet)
+        {
+            bullet.F_Clear();
+            bullet.gameObject.SetActive(false);
+            //
+            EntityManager.Instance.F_RemoveEntity(bullet);
+            _runBullets.Remove(bullet);
+            _releaseBulletStack.Push(bullet);
         }
 
         public void F_Clear()

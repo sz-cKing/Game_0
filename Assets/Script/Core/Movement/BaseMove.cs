@@ -23,12 +23,10 @@ namespace Script.Core.Movement
             return _dataBaseMove;
         }
 
-        public void F_SetMoveController(IMoveController moveController)
+        public virtual void F_Update(float deltaTime)
         {
-            _dataBaseMove.MoveController = moveController;
+            _dataBaseMove?.UpdateMoveCallback?.Invoke(this);
         }
-
-        public abstract void F_Update(float deltaTime);
 
         public virtual void F_Clear()
         {

@@ -87,7 +87,7 @@ namespace Script.Core.Entity
         }
 
         public BaseEntity Entity => this;
-        
+
         public virtual void F_CheckOtherCollider(IColliderInstance otherCollider, Action<CheckResult> callback)
         {
             CheckResult checkResult = new CheckResult
@@ -95,11 +95,7 @@ namespace Script.Core.Entity
                 IsCollider = Collider2D.IsTouching(otherCollider.Collider2D),
                 Checker = this, Other = otherCollider,
             };
-            //
-            if (checkResult.IsCollider)
-            {
-                callback?.Invoke(checkResult);
-            }
+            callback?.Invoke(checkResult);
         }
     }
 }

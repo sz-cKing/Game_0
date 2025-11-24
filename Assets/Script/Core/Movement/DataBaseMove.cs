@@ -1,4 +1,5 @@
-﻿using Script.Core.Entity;
+﻿using System;
+using Script.Core.Entity;
 using UnityEngine;
 
 namespace Script.Core.Movement
@@ -22,5 +23,10 @@ namespace Script.Core.Movement
         /// 当前运动的实例对象
         /// </summary>
         public IMoveController MoveController;
+
+        /// <summary>
+        /// 更新的回调
+        /// </summary>
+        public Action<BaseMove> UpdateMoveCallback;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Script.Core.Common;
+using UnityEngine;
 
 namespace Script.Core.Movement
 {
@@ -23,7 +24,13 @@ namespace Script.Core.Movement
         {
             if (_canRun)
             {
+                DataBaseMove dataBaseMove = F_GetData();
+                Vector3 currentPos = dataBaseMove.MoveController.F_GetCurrentPos();
+                currentPos += dataBaseMove.MoveDirection * dataBaseMove.MoveSpeed;
+                dataBaseMove.MoveController.F_SetCurrentPos(currentPos);
+                //
                 _runTime += deltaTime;
+                base.F_Update(deltaTime);
                 if (_runTime >= _dataBeatBack.EffectTime)
                 {
                     _canRun = false;
