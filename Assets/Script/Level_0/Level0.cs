@@ -18,7 +18,7 @@ namespace Script.Level_0
         /// 分离参数
         /// </summary>
         public float separationThreshold = 1f;
-        
+
         public float force = 5f;
 
 
@@ -28,6 +28,7 @@ namespace Script.Level_0
         private Stack<Bullet> _releaseBulletStack;
         private Stack<Monster> _releaseMonsterStack;
         private float _runCreateMonsterTime;
+        private Dictionary<float, CreateMonsterInfo> _CreateMonserDic;
         private Timer _timer;
 
         void Awake()
@@ -42,10 +43,26 @@ namespace Script.Level_0
             EntityManager.Instance.F_AddEntity(mainHero);
             //倒计时
             _timer = new Timer();
+            _CreateMonserDic = new Dictionary<float, CreateMonsterInfo>();
+            _CreateMonserDic.Add(59, new CreateMonsterInfo() { CreateTotal = 3 });
+            _CreateMonserDic.Add(40, new CreateMonsterInfo() { CreateTotal = 4 });
+            _CreateMonserDic.Add(30, new CreateMonsterInfo() { CreateTotal = 6 });
+            _CreateMonserDic.Add(15, new CreateMonsterInfo() { CreateTotal = 10 });
             _timer.F_Init(60, (lastTime) =>
             {
                 //UI层的倒讲时
                 uiLevel0.OnTime(lastTime);
+                //倒计到指定的点就创建怪物
+                int lastTimeInt = Mathf.RoundToInt(lastTime);
+                if (_CreateMonserDic.ContainsKey(lastTimeInt) && _CreateMonserDic[lastTimeInt].IsHaveCreate == false)
+                {
+                    for (int i = 0; i < _CreateMonserDic[lastTimeInt].CreateTotal; i++)
+                    {
+                        _CreateMonserDic[lastTimeInt].IsHaveCreate = true;
+                        CreateCreateMonster();
+                    }
+                }
+
                 //
                 if (lastTime <= 0)
                 {
@@ -61,46 +78,70 @@ namespace Script.Level_0
 
         void Update()
         {
-            UpdateCreateMonster(Time.deltaTime);
             UpdateCreateBullet(Time.deltaTime);
             UpdateCheckBulletRelease();
         }
 
-        private void UpdateCreateMonster(float deltaTime)
+        private void CreateCreateMonster()
         {
-            _runCreateMonsterTime += deltaTime;
-            float createMonsterInterval = 0.5f;
-            while (_runCreateMonsterTime >= createMonsterInterval &&
-                   EntityManager.Instance.F_GetEntityByType(enEntityType.Monster).Count < 4)
+            Monster monster = null;
+            if (_releaseMonsterStack.Count > 0)
             {
-                _runCreateMonsterTime -= createMonsterInterval;
-                //
-                Monster monster = null;
-                if (_releaseMonsterStack.Count > 0)
-                {
-                    monster = _releaseMonsterStack.Pop();
-                }
-                else
-                {
-                    GameObject newBullet = Instantiate(uiLevel0.v_MonsterImage.gameObject, uiLevel0.transform);
-                    monster = newBullet.AddComponent<Monster>();
-                }
-
-                //追踪目标移动
-                FollowTarget followTarget = new FollowTarget(new DataFollowTarget()
-                {
-                    //追踪的目标
-                    MoveToTargetEntity = EntityManager.Instance.F_GetMainHero(),
-                    MoveSpeed = monster.F_GetMoveSpeed(),
-                    MoveController = monster,
-                    UpdateMoveCallback = OnMonsterMove,
-                });
-                monster.TeamType = enTeamType.Enemy;
-                monster.F_AddMove(followTarget);
-                monster.F_SetCurrentPos(new Vector3(Random.Range(0, Screen.width), Random.Range(0, Screen.height), 0));
-                EntityManager.Instance.F_AddEntity(monster);
+                monster = _releaseMonsterStack.Pop();
             }
+            else
+            {
+                GameObject newBullet = Instantiate(uiLevel0.v_MonsterImage.gameObject, uiLevel0.transform);
+                monster = newBullet.AddComponent<Monster>();
+            }
+
+            //追踪目标移动
+            FollowTarget followTarget = new FollowTarget(new DataFollowTarget()
+            {
+                //追踪的目标
+                MoveToTargetEntity = EntityManager.Instance.F_GetMainHero(),
+                MoveSpeed = monster.F_GetMoveSpeed(),
+                MoveController = monster,
+                UpdateMoveCallback = OnMonsterMove,
+            });
+            monster.TeamType = enTeamType.Enemy;
+            monster.F_AddMove(followTarget);
+            //从屏幕外随机一个坐标
+            monster.F_SetCurrentPos(GetRandomOutOfScreenPoint());
+            EntityManager.Instance.F_AddEntity(monster);
         }
+
+        private static Vector2 GetRandomOutOfScreenPoint(float offset = 100f)
+        {
+            float screenW = Screen.width;
+            float screenH = Screen.height;
+
+            int side = Random.Range(0, 4); // 0=上 1=下 2=左 3=右
+            float x = 0, y = 0;
+
+            switch (side)
+            {
+                case 0: // 上
+                    x = Random.Range(-offset, screenW + offset);
+                    y = screenH + offset;
+                    break;
+                case 1: // 下
+                    x = Random.Range(-offset, screenW + offset);
+                    y = -offset;
+                    break;
+                case 2: // 左
+                    x = -offset;
+                    y = Random.Range(-offset, screenH + offset);
+                    break;
+                case 3: // 右
+                    x = screenW + offset;
+                    y = Random.Range(-offset, screenH + offset);
+                    break;
+            }
+
+            return new Vector2(x, y);
+        }
+
 
         /// <summary>
         /// 怪物移动需要处理之间的间隔问题
@@ -160,36 +201,41 @@ namespace Script.Level_0
             while (_runTime >= _CreateBulletTime)
             {
                 _runTime -= _CreateBulletTime;
-                //
-                Bullet bullet = null;
-                if (_releaseBulletStack.Count > 0)
-                {
-                    bullet = _releaseBulletStack.Pop();
-                }
-                else
-                {
-                    GameObject newBullet = Instantiate(uiLevel0.v_BulletImage.gameObject, uiLevel0.transform);
-                    bullet = newBullet.AddComponent<Bullet>();
-                }
-
-                //给子弹添加直接飞行
-                DirectionMove directionMove = new DirectionMove(new DataBaseMove()
-                {
-                    //给子弹的飞行的方向
-                    MoveDirection = GetBulletTargetDirection(),
-                    MoveController = bullet,
-                    MoveSpeed = bullet.F_GetMoveSpeed(),
-                    //检测飞行中是否碰撞
-                    UpdateMoveCallback = OnCheckBulletCollider,
-                });
-                bullet.TeamType = enTeamType.Self;
-                bullet.F_AddMove(directionMove);
-                //设置子弹的初始坐标
-                bullet.F_SetCurrentPos(EntityManager.Instance.F_GetMainHero().F_GetCurrentPos());
-                bullet.gameObject.SetActive(true);
-                EntityManager.Instance.F_AddEntity(bullet);
-                _runBullets.Add(bullet);
+                CreateBullet();
             }
+        }
+
+        private void CreateBullet()
+        {
+            //
+            Bullet bullet = null;
+            if (_releaseBulletStack.Count > 0)
+            {
+                bullet = _releaseBulletStack.Pop();
+            }
+            else
+            {
+                GameObject newBullet = Instantiate(uiLevel0.v_BulletImage.gameObject, uiLevel0.transform);
+                bullet = newBullet.AddComponent<Bullet>();
+            }
+
+            //给子弹添加直接飞行
+            DirectionMove directionMove = new DirectionMove(new DataBaseMove()
+            {
+                //给子弹的飞行的方向
+                MoveDirection = GetBulletTargetDirection(bullet),
+                MoveController = bullet,
+                MoveSpeed = bullet.F_GetMoveSpeed(),
+                //检测飞行中是否碰撞
+                UpdateMoveCallback = OnCheckBulletCollider,
+            });
+            bullet.TeamType = enTeamType.Self;
+            bullet.F_AddMove(directionMove);
+            //设置子弹的初始坐标
+            bullet.F_SetCurrentPos(EntityManager.Instance.F_GetMainHero().F_GetCurrentPos());
+            bullet.gameObject.SetActive(true);
+            EntityManager.Instance.F_AddEntity(bullet);
+            _runBullets.Add(bullet);
         }
 
         /// <summary>
@@ -223,9 +269,27 @@ namespace Script.Level_0
                                 MoveSpeed = 4,
                             });
                             tempMonster.F_AddMove(beatBack);
-                            //子弹对象移除
+
                             Bullet bullet = baseMove.F_GetData().MoveController as Bullet;
-                            ClearBullet(bullet);
+                            // 更改当前子弹的移动朝向
+                            if (bullet != null)
+                            {
+                                bullet.F_Clear();
+                                bullet.F_AddMove((new DirectionMove(new DataBaseMove()
+                                {
+                                    MoveController = bullet, MoveDirection = -beatBackDirection,
+                                    MoveSpeed = bullet.F_GetMoveSpeed(),
+                                    //检测飞行中是否碰撞
+                                    UpdateMoveCallback = OnCheckBulletCollider,
+                                })));
+                            }
+                            else
+                            {
+                                Debug.LogError("为什么这个不是子弹呢？");
+                            }
+
+                            // 子弹对象移除
+                            // ClearBullet(bullet);
                         }
                     }));
                 }
@@ -236,19 +300,22 @@ namespace Script.Level_0
             }
         }
 
-        private Vector3 GetBulletTargetDirection()
+        private Vector3 GetBulletTargetDirection(Bullet bullet)
         {
-            Vector3 direction;
+            Vector3 direction = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0).normalized;
             List<BaseEntity> monsters = EntityManager.Instance.F_GetEntityByType(enEntityType.Monster);
             if (monsters.Count > 0)
             {
-                int randomIndex = Random.Range(0, monsters.Count);
-                direction = (monsters[randomIndex].F_GetCurrentPos() -
-                             EntityManager.Instance.F_GetMainHero().F_GetCurrentPos()).normalized;
-            }
-            else
-            {
-                direction = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0).normalized;
+                float minDistance = float.MaxValue;
+                foreach (var tempMonster in monsters)
+                {
+                    var tempDirection = tempMonster.F_GetCurrentPos() - bullet.F_GetCurrentPos();
+                    float distance = tempDirection.sqrMagnitude;
+                    if (distance < minDistance)
+                    {
+                        direction = tempDirection.normalized;
+                    }
+                }
             }
 
             return direction;
@@ -261,7 +328,7 @@ namespace Script.Level_0
                 Bullet bullet = _runBullets[i];
                 if (CanvasOverlayCheck.F_IsUIElementOutOfScreen(bullet.F_GetRectTransform()))
                 {
-                    ClearBullet(bullet);
+                    // ClearBullet(bullet);
                 }
             }
         }
@@ -281,5 +348,12 @@ namespace Script.Level_0
             EntityManager.Instance.F_Clear();
             _timer.F_Clear();
         }
+    }
+
+    public class CreateMonsterInfo
+    {
+        public bool IsHaveCreate;
+
+        public int CreateTotal;
     }
 }
