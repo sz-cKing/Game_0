@@ -21,7 +21,7 @@ namespace Script.Core.Common
             _allUpdate = new List<IUpdate>();
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
             if (_runing)
             {

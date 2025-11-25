@@ -14,7 +14,15 @@ namespace Script.Level_0
     {
         public UILevel0 uiLevel0;
 
-        private readonly float _CreateBulletTime = 0.5f;
+        /// <summary>
+        /// 分离参数
+        /// </summary>
+        public float separationThreshold = 1f;
+        
+        public float force = 5f;
+
+
+        private readonly float _CreateBulletTime = 1.5f;
         private float _runTime;
         private List<Bullet> _runBullets;
         private Stack<Bullet> _releaseBulletStack;
@@ -85,11 +93,64 @@ namespace Script.Level_0
                     MoveToTargetEntity = EntityManager.Instance.F_GetMainHero(),
                     MoveSpeed = monster.F_GetMoveSpeed(),
                     MoveController = monster,
+                    UpdateMoveCallback = OnMonsterMove,
                 });
                 monster.TeamType = enTeamType.Enemy;
                 monster.F_AddMove(followTarget);
                 monster.F_SetCurrentPos(new Vector3(Random.Range(0, Screen.width), Random.Range(0, Screen.height), 0));
                 EntityManager.Instance.F_AddEntity(monster);
+            }
+        }
+
+        /// <summary>
+        /// 怪物移动需要处理之间的间隔问题
+        /// </summary>
+        /// <param name="obj"></param>
+        private void OnMonsterMove(BaseMove obj)
+        {
+            // 转换成当前的怪物
+            if (obj.F_GetData().MoveController is not Monster monster)
+            {
+                return;
+            }
+
+            float separationThresholdSqr = separationThreshold * separationThreshold;
+
+            // 获取怪物列表
+            var monsters = EntityManager.Instance.F_GetEntityByType(enEntityType.Monster);
+            int count = monsters.Count;
+
+            if (count < 2) return;
+
+            Vector3 selfPos = monster.F_GetCurrentPos();
+            Vector3 separationVector = Vector3.zero;
+            int neighborCount = 0;
+
+            foreach (var other in monsters)
+            {
+                // 排除自己
+                if (other.gameObject == monster.gameObject)
+                    continue;
+
+                Vector3 diff = selfPos - other.transform.position;
+                float sqrDist = diff.sqrMagnitude;
+
+                // 使用平方距离，避免频繁开方
+                if (sqrDist > 0f && sqrDist < separationThresholdSqr)
+                {
+                    // 距离越近，权重越大
+                    float invDist = 1f / Mathf.Sqrt(sqrDist);
+                    separationVector += diff * invDist;
+                    neighborCount++;
+                }
+            }
+
+            // 应用分离力
+            if (neighborCount > 0)
+            {
+                separationVector /= neighborCount;
+                Vector3 newPos = selfPos + separationVector * force;
+                monster.F_SetCurrentPos(newPos);
             }
         }
 
@@ -119,7 +180,7 @@ namespace Script.Level_0
                     MoveController = bullet,
                     MoveSpeed = bullet.F_GetMoveSpeed(),
                     //检测飞行中是否碰撞
-                    UpdateMoveCallback = CheckBulletCollider,
+                    UpdateMoveCallback = OnCheckBulletCollider,
                 });
                 bullet.TeamType = enTeamType.Self;
                 bullet.F_AddMove(directionMove);
@@ -135,7 +196,7 @@ namespace Script.Level_0
         /// 检测已经碰撞
         /// </summary>
         /// <param name="baseMove"></param>
-        private void CheckBulletCollider(BaseMove baseMove)
+        private void OnCheckBulletCollider(BaseMove baseMove)
         {
             //这个是子弹,获取它的测试碰撞
             if (baseMove.F_GetData().MoveController is ICheckColliderInstance bulletCheckColliderInstance)
@@ -159,7 +220,7 @@ namespace Script.Level_0
                                 EffectTime = 0.5f,
                                 MoveController = tempMonster,
                                 MoveDirection = beatBackDirection,
-                                MoveSpeed = 3,
+                                MoveSpeed = 4,
                             });
                             tempMonster.F_AddMove(beatBack);
                             //子弹对象移除
