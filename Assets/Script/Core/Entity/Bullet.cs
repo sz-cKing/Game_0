@@ -23,7 +23,10 @@ namespace Script.Core.Entity
             base.F_CheckOtherCollider(otherCollider, callback);
         }
 
-        public void F_Clear()
+        /// <summary>
+        /// 清除所有的移动方式
+        /// </summary>
+        public void F_ClearAllMove()
         {
             for (int i = v_BaseMoves.Count - 1; i >= 0; i--)
             {

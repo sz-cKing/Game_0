@@ -201,7 +201,12 @@ namespace Script.Level_0
             while (_runTime >= _CreateBulletTime)
             {
                 _runTime -= _CreateBulletTime;
-                CreateBullet();
+                //最多创建3个子弹自己
+                int bulletTotal = EntityManager.Instance.F_GetEntityByType(enEntityType.Bullet).Count;
+                if (bulletTotal < 3)
+                {
+                    CreateBullet();
+                }
             }
         }
 
@@ -274,7 +279,7 @@ namespace Script.Level_0
                             // 更改当前子弹的移动朝向
                             if (bullet != null)
                             {
-                                bullet.F_Clear();
+                                bullet.F_ClearAllMove();
                                 bullet.F_AddMove((new DirectionMove(new DataBaseMove()
                                 {
                                     MoveController = bullet, MoveDirection = -beatBackDirection,
@@ -329,13 +334,28 @@ namespace Script.Level_0
                 if (CanvasOverlayCheck.F_IsUIElementOutOfScreen(bullet.F_GetRectTransform()))
                 {
                     // ClearBullet(bullet);
+
+                    //给子弹添加直接飞行-反弹
+                    DirectionMove directionMove = new DirectionMove(new DataBaseMove()
+                    {
+                        //给子弹的飞行的方向
+                        MoveDirection =
+                            (EntityManager.Instance.F_GetMainHero().F_GetCurrentPos() - bullet.F_GetCurrentPos())
+                            .normalized,
+                        MoveController = bullet,
+                        MoveSpeed = bullet.F_GetMoveSpeed(),
+                        //检测飞行中是否碰撞
+                        UpdateMoveCallback = OnCheckBulletCollider,
+                    });
+                    bullet.F_ClearAllMove();
+                    bullet.F_AddMove(directionMove);
                 }
             }
         }
 
         private void ClearBullet(Bullet bullet)
         {
-            bullet.F_Clear();
+            bullet.F_ClearAllMove();
             bullet.gameObject.SetActive(false);
             //
             EntityManager.Instance.F_RemoveEntity(bullet);
