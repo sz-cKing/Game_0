@@ -146,11 +146,48 @@ namespace Script.Level_0
         /// <summary>
         /// 怪物移动需要处理之间的间隔问题
         /// </summary>
-        /// <param name="obj"></param>
-        private void OnMonsterMove(BaseMove obj)
+        /// <param name="baseMove"></param>
+        private void OnMonsterMove(BaseMove baseMove)
+        {
+            OnHandleMoveSeparation(baseMove);
+            OnCheckMonsterCollider(baseMove);
+        }
+
+        /// <summary>
+        /// 检测怪物碰撞
+        /// </summary>
+        /// <param name="baseMove"></param>
+        private void OnCheckMonsterCollider(BaseMove baseMove)
+        {
+            //这个是怪物,获取它的测试碰撞
+            if (baseMove.F_GetData().MoveController is ICheckColliderInstance bulletCheckColliderInstance)
+            {
+                //
+                MainHero mainHero = (MainHero)EntityManager.Instance.F_GetMainHero();
+
+                //检测子弹是否碰撞到这个怪物
+                bulletCheckColliderInstance.F_CheckOtherCollider(mainHero, (result =>
+                {
+                    if (result.IsCollider)
+                    {
+                        Debug.LogError("碰撞到了，主角");
+                    }
+                }));
+            }
+            else
+            {
+                Debug.LogError("为什么会存在传入的数据不是检测实例呢？");
+            }
+        }
+
+        /// <summary>
+        /// 处理移动分离
+        /// </summary>
+        /// <param name="baseMove"></param>
+        private void OnHandleMoveSeparation(BaseMove baseMove)
         {
             // 转换成当前的怪物
-            if (obj.F_GetData().MoveController is not Monster monster)
+            if (baseMove.F_GetData().MoveController is not Monster monster)
             {
                 return;
             }
@@ -268,10 +305,10 @@ namespace Script.Level_0
                             //击飞效果
                             BeatBack beatBack = new BeatBack(new DataBeatBack()
                             {
-                                EffectTime = 0.5f,
+                                EffectTime = 0.25f,
                                 MoveController = tempMonster,
                                 MoveDirection = beatBackDirection,
-                                MoveSpeed = 4,
+                                MoveSpeed = 2.5f,
                             });
                             tempMonster.F_AddMove(beatBack);
 
