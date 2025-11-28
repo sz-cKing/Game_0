@@ -18,7 +18,7 @@ namespace Script.Common
 
         private void OnClickStart()
         {
-            GameManager.Instance.LoadScene(enSceneType.Level0);
+            GameManager.Instance.F_LoadScene(enSceneType.Level0);
         }
     }
 }

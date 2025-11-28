@@ -18,7 +18,7 @@ namespace Script
         /// 加载指定的场景
         /// </summary>
         /// <param name="enSceneType"></param>
-        public void LoadScene(enSceneType enSceneType)
+        public void F_LoadScene(enSceneType enSceneType)
         {
             _currentScene = enSceneType;
             SceneManager.LoadScene(enSceneType.ToString());
@@ -28,12 +28,12 @@ namespace Script
         /// <summary>
         /// 加载下一次关卡
         /// </summary>
-        public void LoadNextScene()
+        public void F_LoadNextScene()
         {
             int nextLevel = (int)_currentScene + 1;
             int total = (int)enSceneType.All;
             nextLevel = nextLevel >= total ? 0 : nextLevel;
-            LoadScene((enSceneType)nextLevel);
+            F_LoadScene((enSceneType)nextLevel);
         }
     }
 }

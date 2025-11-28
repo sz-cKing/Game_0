@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Script.CommonUI;
 using Script.Core.CheckCollider;
 using Script.Core.Common;
 using Script.Core.Entity;
@@ -13,6 +14,7 @@ namespace Script.Level_0
     public class Level0 : MonoBehaviour
     {
         public UILevel0 uiLevel0;
+        public UISettlement uiSettlement;
 
         /// <summary>
         /// 分离参数
@@ -21,7 +23,7 @@ namespace Script.Level_0
 
         public float force = 5f;
 
-
+        private int _currentMainHeroHp;
         private readonly float _CreateBulletTime = 1.5f;
         private float _runTime;
         private List<Bullet> _runBullets;
@@ -30,12 +32,16 @@ namespace Script.Level_0
         private float _runCreateMonsterTime;
         private Dictionary<float, CreateMonsterInfo> _CreateMonserDic;
         private Timer _timer;
+        private int _canCreateBulletTotal;
+        private Dictionary<Monster, float> _colliderMonsterDic;
+
 
         void Awake()
         {
             _runBullets = new List<Bullet>();
             _releaseBulletStack = new Stack<Bullet>();
             _releaseMonsterStack = new Stack<Monster>();
+            _colliderMonsterDic = new Dictionary<Monster, float>();
             //玩家操作的主控英雄
             MainHero mainHero = uiLevel0.v_HeroImage.gameObject.AddComponent<MainHero>();
             mainHero.TeamType = enTeamType.Self;
@@ -44,14 +50,20 @@ namespace Script.Level_0
             //倒计时
             _timer = new Timer();
             _CreateMonserDic = new Dictionary<float, CreateMonsterInfo>();
-            _CreateMonserDic.Add(59, new CreateMonsterInfo() { CreateTotal = 3 });
-            _CreateMonserDic.Add(40, new CreateMonsterInfo() { CreateTotal = 4 });
-            _CreateMonserDic.Add(30, new CreateMonsterInfo() { CreateTotal = 6 });
-            _CreateMonserDic.Add(15, new CreateMonsterInfo() { CreateTotal = 10 });
+            _CreateMonserDic.Add(59, new CreateMonsterInfo() { CreateTotal = 6 });
+            _CreateMonserDic.Add(40, new CreateMonsterInfo() { CreateTotal = 8 });
+            _CreateMonserDic.Add(30, new CreateMonsterInfo() { CreateTotal = 10 });
+            _CreateMonserDic.Add(15, new CreateMonsterInfo() { CreateTotal = 15 });
+            OnStartGame();
+        }
+
+        private void OnStartGame()
+        {
+            _currentMainHeroHp = 5;
             _timer.F_Init(60, (lastTime) =>
             {
                 //UI层的倒讲时
-                uiLevel0.OnTime(lastTime);
+                uiLevel0.F_OnTime(lastTime);
                 //倒计到指定的点就创建怪物
                 int lastTimeInt = Mathf.RoundToInt(lastTime);
                 if (_CreateMonserDic.ContainsKey(lastTimeInt) && _CreateMonserDic[lastTimeInt].IsHaveCreate == false)
@@ -60,6 +72,7 @@ namespace Script.Level_0
                     {
                         _CreateMonserDic[lastTimeInt].IsHaveCreate = true;
                         CreateCreateMonster();
+                        SetBulletTotal(lastTimeInt);
                     }
                 }
 
@@ -71,9 +84,34 @@ namespace Script.Level_0
             });
         }
 
+        private void SetBulletTotal(int lastTimeInt)
+        {
+            switch (lastTimeInt)
+            {
+                case 59:
+                    _canCreateBulletTotal = 3;
+                    break;
+                case 40:
+                    _canCreateBulletTotal = 5;
+                    break;
+                case 30:
+                    _canCreateBulletTotal = 6;
+                    break;
+                case 15:
+                    _canCreateBulletTotal = 8;
+                    break;
+            }
+        }
+
         private void OnGameFinish()
         {
             Debug.LogError("游戏结束");
+            if (_currentMainHeroHp > 0)
+            {
+                //挑战成功进入下一关卡
+                uiSettlement.F_SetData(new DataUISettlement()
+                    { Result = enResult.挑战成功, OnClickRestartGame = OnStartGame });
+            }
         }
 
         void Update()
@@ -170,13 +208,53 @@ namespace Script.Level_0
                 {
                     if (result.IsCollider)
                     {
-                        Debug.LogError("碰撞到了，主角");
+                        MonsterColliderMainHero((Monster)baseMove.F_GetData().MoveController);
+                        // Debug.LogError("碰撞到了，主角");
                     }
                 }));
             }
             else
             {
                 Debug.LogError("为什么会存在传入的数据不是检测实例呢？");
+            }
+        }
+
+        /// <summary>
+        /// 怪物碰撞到了主控角色
+        /// </summary>
+        /// <param name="monster"></param>
+        private void MonsterColliderMainHero(Monster monster)
+        {
+            if (monster != null)
+            {
+                if (_colliderMonsterDic.ContainsKey(monster))
+                {
+                    if (_colliderMonsterDic[monster] - Time.time >= 0.5f) //之前生效过，需要CD-0.5f秒后再认为碰撞生效一次
+                    {
+                        //
+                        SetMainHeroHurt();
+                        _colliderMonsterDic[monster] = Time.time;
+                    }
+                }
+                else
+                {
+                    //
+                    SetMainHeroHurt();
+                    _colliderMonsterDic.Add(monster, Time.time);
+                }
+            }
+        }
+
+        private void SetMainHeroHurt()
+        {
+            _currentMainHeroHp--;
+            uiLevel0.F_SetHp(_currentMainHeroHp);
+            Debug.LogError($"当前玩家的血量:{_currentMainHeroHp}");
+            if (_currentMainHeroHp <= 0)
+            {
+                uiSettlement.F_SetData(new DataUISettlement()
+                    { Result = enResult.挑战失败, OnClickRestartGame = OnStartGame });
+                Debug.LogError("血量为0.挑战失败，");
             }
         }
 
@@ -240,7 +318,7 @@ namespace Script.Level_0
                 _runTime -= _CreateBulletTime;
                 //最多创建3个子弹自己
                 int bulletTotal = EntityManager.Instance.F_GetEntityByType(enEntityType.Bullet).Count;
-                if (bulletTotal < 3)
+                if (bulletTotal < _canCreateBulletTotal)
                 {
                     CreateBullet();
                 }
