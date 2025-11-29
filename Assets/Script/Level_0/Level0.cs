@@ -1,17 +1,21 @@
+using System;
 using System.Collections.Generic;
 using Script.CommonUI;
+using Script.Core;
 using Script.Core.CheckCollider;
 using Script.Core.Common;
 using Script.Core.Entity;
 using Script.Core.Movement;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
+using Random = UnityEngine.Random;
 
 namespace Script.Level_0
 {
     /// <summary>
     /// 场景0的管理器
     /// </summary>
-    public class Level0 : MonoBehaviour
+    public class Level0 : MonoBehaviour,IUpdate
     {
         public UILevel0 uiLevel0;
         public UISettlement uiSettlement;
@@ -54,11 +58,19 @@ namespace Script.Level_0
             _CreateMonserDic.Add(40, new CreateMonsterInfo() { CreateTotal = 8 });
             _CreateMonserDic.Add(30, new CreateMonsterInfo() { CreateTotal = 10 });
             _CreateMonserDic.Add(15, new CreateMonsterInfo() { CreateTotal = 15 });
+            //
+            UpdateManager.Instance.F_AddUpdate(this);
             OnStartGame();
+        }
+
+        private void OnDestroy()
+        {
+            UpdateManager.Instance.F_RemoveUpdate(this);
         }
 
         private void OnStartGame()
         {
+            UpdateManager.Instance.F_SetState(false);
             _currentMainHeroHp = 5;
             _timer.F_Init(60, (lastTime) =>
             {
@@ -113,13 +125,14 @@ namespace Script.Level_0
                     { Result = enResult.挑战成功, OnClickRestartGame = OnStartGame });
             }
         }
-
-        void Update()
+        
+        public void F_Update(float deltaTime)
         {
             UpdateCreateBullet(Time.deltaTime);
             UpdateCheckBulletRelease();
         }
-
+        
+        
         private void CreateCreateMonster()
         {
             Monster monster = null;
@@ -483,6 +496,7 @@ namespace Script.Level_0
             EntityManager.Instance.F_Clear();
             _timer.F_Clear();
         }
+
     }
 
     public class CreateMonsterInfo

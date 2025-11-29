@@ -50,6 +50,7 @@ namespace Script.CommonUI
         public void F_SetData(DataUISettlement dataUISettlement)
         {
             gameObject.SetActive(true);
+            UpdateManager.Instance.F_SetState(true);
             _dataUISettlement = dataUISettlement;
             switch (dataUISettlement.Result)
             {
