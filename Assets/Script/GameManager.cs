@@ -1,5 +1,3 @@
-using System;
-using Script.Common;
 using Script.Core;
 using Script.Core.Common;
 using UnityEngine;

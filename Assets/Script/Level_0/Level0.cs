@@ -1,13 +1,10 @@
-using System;
 using System.Collections.Generic;
 using Script.CommonUI;
-using Script.Core;
 using Script.Core.CheckCollider;
 using Script.Core.Common;
 using Script.Core.Entity;
 using Script.Core.Movement;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using Random = UnityEngine.Random;
 
 namespace Script.Level_0
@@ -15,7 +12,7 @@ namespace Script.Level_0
     /// <summary>
     /// 场景0的管理器
     /// </summary>
-    public class Level0 : MonoBehaviour,IUpdate
+    public class Level0 : MonoBehaviour
     {
         public UILevel0 uiLevel0;
         public UISettlement uiSettlement;
@@ -34,11 +31,10 @@ namespace Script.Level_0
         private Stack<Bullet> _releaseBulletStack;
         private Stack<Monster> _releaseMonsterStack;
         private float _runCreateMonsterTime;
-        private Dictionary<float, CreateMonsterInfo> _CreateMonserDic;
+        private Dictionary<float, CreateMonsterInfo> _createMonsterDic;
         private Timer _timer;
         private int _canCreateBulletTotal;
         private Dictionary<Monster, float> _colliderMonsterDic;
-
 
         void Awake()
         {
@@ -46,30 +42,40 @@ namespace Script.Level_0
             _releaseBulletStack = new Stack<Bullet>();
             _releaseMonsterStack = new Stack<Monster>();
             _colliderMonsterDic = new Dictionary<Monster, float>();
-            //玩家操作的主控英雄
-            MainHero mainHero = uiLevel0.v_HeroImage.gameObject.AddComponent<MainHero>();
-            mainHero.TeamType = enTeamType.Self;
-            mainHero.F_Init();
-            EntityManager.Instance.F_AddEntity(mainHero);
+
             //倒计时
             _timer = new Timer();
-            _CreateMonserDic = new Dictionary<float, CreateMonsterInfo>();
-            _CreateMonserDic.Add(59, new CreateMonsterInfo() { CreateTotal = 6 });
-            _CreateMonserDic.Add(40, new CreateMonsterInfo() { CreateTotal = 8 });
-            _CreateMonserDic.Add(30, new CreateMonsterInfo() { CreateTotal = 10 });
-            _CreateMonserDic.Add(15, new CreateMonsterInfo() { CreateTotal = 15 });
+            _createMonsterDic = new Dictionary<float, CreateMonsterInfo>();
+            _createMonsterDic.Add(59, new CreateMonsterInfo() { CreateTotal = 6 });
+            _createMonsterDic.Add(40, new CreateMonsterInfo() { CreateTotal = 8 });
+            _createMonsterDic.Add(30, new CreateMonsterInfo() { CreateTotal = 10 });
+            _createMonsterDic.Add(15, new CreateMonsterInfo() { CreateTotal = 15 });
             //
-            UpdateManager.Instance.F_AddUpdate(this);
             OnStartGame();
-        }
-
-        private void OnDestroy()
-        {
-            UpdateManager.Instance.F_RemoveUpdate(this);
         }
 
         private void OnStartGame()
         {
+            //清空场景里的实体
+            EntityManager.Instance.F_Clear();
+
+            //添加主控英雄
+            MainHero mainHero = uiLevel0.v_HeroImage.gameObject.GetComponent<MainHero>();
+            if (mainHero == null)
+            {
+                mainHero = uiLevel0.v_HeroImage.gameObject.AddComponent<MainHero>();
+            }
+            mainHero.TeamType = enTeamType.Self;
+            mainHero.F_Init();
+            EntityManager.Instance.F_AddEntity(mainHero);
+            
+            //回收当前的子弹
+            foreach (var tempBullet in _runBullets)
+            {
+                _releaseBulletStack.Push(tempBullet);
+            }
+            _runBullets.Clear();
+            //
             UpdateManager.Instance.F_SetState(false);
             _currentMainHeroHp = 5;
             _timer.F_Init(60, (lastTime) =>
@@ -78,11 +84,11 @@ namespace Script.Level_0
                 uiLevel0.F_OnTime(lastTime);
                 //倒计到指定的点就创建怪物
                 int lastTimeInt = Mathf.RoundToInt(lastTime);
-                if (_CreateMonserDic.ContainsKey(lastTimeInt) && _CreateMonserDic[lastTimeInt].IsHaveCreate == false)
+                if (_createMonsterDic.ContainsKey(lastTimeInt) && _createMonsterDic[lastTimeInt].IsHaveCreate == false)
                 {
-                    for (int i = 0; i < _CreateMonserDic[lastTimeInt].CreateTotal; i++)
+                    for (int i = 0; i < _createMonsterDic[lastTimeInt].CreateTotal; i++)
                     {
-                        _CreateMonserDic[lastTimeInt].IsHaveCreate = true;
+                        _createMonsterDic[lastTimeInt].IsHaveCreate = true;
                         CreateCreateMonster();
                         SetBulletTotal(lastTimeInt);
                     }
@@ -125,14 +131,13 @@ namespace Script.Level_0
                     { Result = enResult.挑战成功, OnClickRestartGame = OnStartGame });
             }
         }
-        
-        public void F_Update(float deltaTime)
+
+        void Update()
         {
             UpdateCreateBullet(Time.deltaTime);
             UpdateCheckBulletRelease();
         }
-        
-        
+
         private void CreateCreateMonster()
         {
             Monster monster = null;
@@ -496,7 +501,6 @@ namespace Script.Level_0
             EntityManager.Instance.F_Clear();
             _timer.F_Clear();
         }
-
     }
 
     public class CreateMonsterInfo

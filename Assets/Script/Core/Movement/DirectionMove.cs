@@ -10,17 +10,13 @@ namespace Script.Core.Movement
         public DirectionMove(DataBaseMove dataBaseMove) : base(dataBaseMove)
         {
         }
-        
+
         public override void F_Update(float deltaTime)
         {
             DataBaseMove dataBaseMove = F_GetData();
-            if (dataBaseMove.MoveController != null)
-            {
-                Vector3 currentPos = dataBaseMove.MoveController.F_GetCurrentPos();
-                currentPos += dataBaseMove.MoveDirection * dataBaseMove.MoveSpeed;
-                dataBaseMove.MoveController.F_SetCurrentPos(currentPos);
-            }
-
+            Vector3 currentPos = dataBaseMove.MoveController.F_GetCurrentPos();
+            currentPos += dataBaseMove.MoveDirection * dataBaseMove.MoveSpeed;
+            dataBaseMove.MoveController.F_SetCurrentPos(currentPos);
             base.F_Update(deltaTime);
         }
     }

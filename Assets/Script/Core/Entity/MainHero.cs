@@ -14,7 +14,12 @@ namespace Script.Core.Entity
 
         public void F_Init()
         {
-            WasdMovement wasdMovement = this.gameObject.AddComponent<WasdMovement>();
+            WasdMovement wasdMovement = gameObject.GetComponent<WasdMovement>();
+            if (wasdMovement == null)
+            {
+                wasdMovement = gameObject.AddComponent<WasdMovement>();
+            }
+
             wasdMovement.MovementAction = OnMovement;
         }
 
